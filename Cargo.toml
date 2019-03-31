@@ -4,6 +4,11 @@ version = "0.1.0"
 authors = ["Alex Yang <aleozlx@gmail.com>"]
 description = "The official Hotwings command line interface"
 license = "MIT"
+edition = "2018"
+
+[[bin]]
+name = "hwcli"
+path = "src/main.rs"
 
 [dependencies]
 clap = "2.32.0"
@@ -12,3 +17,4 @@ chrono = "0.4.6"
 yaml-rust = "0.4.3"
 colored = "1.6"
 handlebars = "1.1.0"
+nix = "0.10.0"
