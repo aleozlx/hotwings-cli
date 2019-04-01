@@ -1,16 +1,82 @@
 #[macro_use]
 extern crate clap;
-
-use std::os::unix::fs::MetadataExt;
+extern crate colored;
+#[macro_use]
+extern crate log;
+extern crate dirs;
+extern crate fern;
 
 mod cli;
+mod models;
+
+use std::path::{Path, PathBuf};
+use colored::*;
+use models::Job;
+
+fn setup_logger(verbose: u64) -> Result<(), fern::InitError> {
+    // let ref log_dir = dirs::home_dir().expect("Cannot determine the HOME directory.").join(".hwcli");
+    // if !Path::new(log_dir).exists() { std::fs::create_dir(log_dir)?; }
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "{} {} {}",
+                chrono::Local::now().format("[%Y-%m-%d %H:%M:%S]"),
+                record.level(),
+                message
+            ))
+        })
+        .level(match verbose {
+            0 => log::LevelFilter::Warn,
+            1 => log::LevelFilter::Info,
+            2 => log::LevelFilter::Debug,
+            3 => log::LevelFilter::Trace,
+            _ => log::LevelFilter::Trace
+        })
+        // .chain(fern::log_file(log_dir.join("hotwings.log"))?)
+        .chain(std::io::stderr())
+        .apply()?;
+    Ok(())
+}
+
+fn status<'a>(matches: &clap::ArgMatches<'a>) {
+    // Print current dir
+    let cwd = std::fs::canonicalize(std::env::current_dir().expect("I/O Error: getting CWD")).unwrap();
+    println!("Ref directory: {}", cwd.to_str().unwrap().blue());
+    let mut jobs: Vec<Job> = Job::list().into_iter()
+        .filter(|job| {
+            if let Ok(ref_dir) = job.ref_dir() {
+                debug!("{:?} => {:?}", job.dir, ref_dir);
+                cwd == ref_dir
+            }
+            else { false }
+        }).collect();
+    if jobs.len() > 0 {
+        jobs.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        if let Ok(playbook) = jobs[0].playbook() {
+            println!("Last playbook submitted: {}", playbook.to_str().unwrap().blue());
+        }
+    }
+    println!("{} job(s) have been submitted from this directory.", jobs.len());
+
+    // List YAML files
+    
+}
+
+macro_rules! subcommand {
+    ($subcmd:ident, $matches:ident) => {
+        if let Some(matches) = $matches.subcommand_matches(stringify!($subcmd)) {
+            ($subcmd)(matches)
+        }
+    }
+}
 
 fn main() {
-    let matches = clap_app!(myapp =>
+    let args = clap_app!(hwcli =>
         (version: crate_version!())
         (author: crate_authors!())
         (about: crate_description!())
-        (@subcommand init => // storage: repo
+        (@arg VERBOSE: --verbose -v ... "Logging verbosity")
+        (@subcommand new => // storage: repo
             (about: "Create a new Hotwings job specification YAML (aka playbook)")
         )
         (@subcommand remote => // storage: $HOME
@@ -29,26 +95,6 @@ fn main() {
             (about: "Print logs to stdout and stderr")
         )
     ).get_matches();
-
-    if let Some(matches) = matches.subcommand_matches("status") {
-        // Print current dir
-        let cwd = std::env::current_dir().expect("I/O Error: getting CWD");
-        println!("Ref directory: {}", cwd.to_str().unwrap());
-
-        let tmp = std::path::Path::new("/tmp");
-        let my_uid = nix::unistd::Uid::current();
-        let jobs: Vec<std::fs::DirEntry> = std::fs::read_dir(tmp).expect("I/O Error: enumerating /tmp").filter_map(Result::ok)
-            .filter(|entry| entry.path().file_name().unwrap().to_str().unwrap().starts_with("hotwings-"))
-            .filter(|entry| {
-                if let Ok(metadata) = entry.metadata() { nix::unistd::Uid::from_raw(metadata.uid()) == my_uid }
-                else { false }
-            }).collect();
-        for entry in jobs {
-            println!("{:?}", entry);
-        }
-
-        
-
-        // List YAML files
-    }
+    setup_logger(args.occurrences_of("VERBOSE")).expect("Logger Error.");
+    subcommand!(status, args);
 }
