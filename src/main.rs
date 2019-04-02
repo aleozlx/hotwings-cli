@@ -112,66 +112,68 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
             .args(&[fname.to_str().unwrap()])
             .spawn().expect("I/O Error");
     }
-    let remote_name = matches.value_of("NAME").unwrap();
-    if let Ok(ref raw) = std::fs::read_to_string(&fname) {
-        let mut config: models::Config = toml::from_str(raw).expect("Syntax error.");
-        if let Some(ref mut remotes) = config.remotes {
-            let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
-            match selected.len() {
-                1 => {
-                    if let Some(url) = matches.value_of("URL") {
-                        selected[0].url = url.to_owned();
-                        if let Err(e) = config.save(&fname) {
-                            error!("Cannot save config file {}.", fname.to_str().unwrap());
-                            error!("{}", e);
+    if let Some(remote_name) = matches.value_of("NAME") {
+        if let Ok(ref raw) = std::fs::read_to_string(&fname) {
+            let mut config: models::Config = toml::from_str(raw).expect("Syntax error.");
+            if let Some(ref mut remotes) = config.remotes {
+                let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
+                match selected.len() {
+                    1 => {
+                        if let Some(url) = matches.value_of("URL") {
+                            selected[0].url = url.to_owned();
+                            if let Err(e) = config.save(&fname) {
+                                error!("Cannot save config file {}.", fname.to_str().unwrap());
+                                error!("{}", e);
+                            }
+                            else {
+                                println!("The URL is set successfully.");
+                            }
                         }
                         else {
-                            println!("The URL is set successfully.");
+                            println!("url = {}", selected[0].url);
                         }
                     }
-                    else {
-                        println!("url = {}", selected[0].url);
-                    }
-                }
-                0 => {
-                    if let Some(url) = matches.value_of("URL") {
-                        remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
-                        let out = toml::to_string(&config).unwrap();
-                        // config_saver(&config);
-                        if let Err(e) = config.save(&fname) {
-                            error!("Cannot save config file {}.", fname.to_str().unwrap());
-                            error!("{}", e);
+                    0 => {
+                        if let Some(url) = matches.value_of("URL") {
+                            remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
+                            let out = toml::to_string(&config).unwrap();
+                            // config_saver(&config);
+                            if let Err(e) = config.save(&fname) {
+                                error!("Cannot save config file {}.", fname.to_str().unwrap());
+                                error!("{}", e);
+                            }
+                            else {
+                                println!("The URL is set successfully.");
+                            }
                         }
                         else {
-                            println!("The URL is set successfully.");
+                            println!("A remoted named \"{}\" is undefined.", remote_name);
                         }
                     }
-                    else {
-                        println!("A remoted named \"{}\" is undefined.", remote_name);
-                    }
-                }
-                _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
-            }
-        }
-        else {
-            if let Some(url) = matches.value_of("URL") {
-                config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
-                let out = toml::to_string(&config).unwrap();
-                if let Err(e) = config.save(&fname) {
-                    error!("Cannot save config file {}.", fname.to_str().unwrap());
-                    error!("{}", e);
-                }
-                else {
-                    println!("The URL is set successfully.");
+                    _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
                 }
             }
             else {
-                // There is no entry, so it must be undefined.
-                println!("A remoted named \"{}\" is undefined.", remote_name);
+                if let Some(url) = matches.value_of("URL") {
+                    config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
+                    let out = toml::to_string(&config).unwrap();
+                    if let Err(e) = config.save(&fname) {
+                        error!("Cannot save config file {}.", fname.to_str().unwrap());
+                        error!("{}", e);
+                    }
+                    else {
+                        println!("The URL is set successfully.");
+                    }
+                }
+                else {
+                    // There is no entry, so it must be undefined.
+                    println!("A remoted named \"{}\" is undefined.", remote_name);
+                }   
             }
-            
         }
-
+    }
+    else {
+        // TODO list all remotes
     }
 }
 
@@ -198,9 +200,9 @@ fn main() {
             (@arg URL: "If present, overwrite the remote URL, otherwise print.")
         )
         (@subcommand sub => // storage: /tmp/hotwings-task_id & chmod
-            (@arg PREPARE: --prepare "Prepare a submission tarball but do not submit.")
-            (@arg PLAYBOOK: +required "YAML playbook")
             (about: "Check & submit a playbook to a Hotwings job system")
+            (@arg PREPARE: --prepare "Prepare a submission tarball but do not submit.")
+            (@arg PLAYBOOK: "YAML playbook")
         )
         (@subcommand list => // storage: /tmp/hotwings-* owned by current user
             (about: "List jobs submitted")
