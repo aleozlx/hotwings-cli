@@ -46,7 +46,7 @@ fn list<'a>(matches: &clap::ArgMatches<'a>) {
         println!("No job is found associated to this directory.");
     }
     for job in jobs.iter().take(10) {
-        println!("{:?}", job.dir);
+        println!("{}", job);
     }    
 }
 
@@ -81,7 +81,7 @@ fn status<'a>(matches: &clap::ArgMatches<'a>) {
     let mut jobs: Vec<Job> = Job::list().into_iter()
         .filter(|job| {
             if let Ok(ref_dir) = job.ref_dir() {
-                debug!("{:?} => {:?}", job.dir, ref_dir);
+                debug!("{} => {}", job, ref_dir.to_str().unwrap().blue());
                 cwd == ref_dir
             }
             else { false }
