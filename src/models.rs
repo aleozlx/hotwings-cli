@@ -4,7 +4,16 @@ use colored::*;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 
-pub struct Remote {}
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub remotes: Option<Vec<Remote>>
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Remote {
+    pub name: String,
+    pub url: String
+}
 
 pub const SYM_REF_DIR: &str = ".ref";
 pub const SYM_PLAYBOOK: &str = ".playbook";

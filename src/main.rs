@@ -6,13 +6,16 @@ extern crate log;
 extern crate dirs;
 extern crate fern;
 extern crate rand;
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 mod cli;
 mod models;
 
 use std::path::{Path, PathBuf};
 use colored::*;
-use models::Job;
+use models::{Job, Remote};
 
 fn setup_logger(verbose: u64) -> Result<(), fern::InitError> {
     // let ref log_dir = dirs::home_dir().expect("Cannot determine the HOME directory.").join(".hwcli");
@@ -96,10 +99,65 @@ fn status<'a>(matches: &clap::ArgMatches<'a>) {
             println!("Last playbook submitted: {}", playbook.to_str().unwrap().blue());
         }
     }
-    println!("{} job(s) have been submitted from this directory.", jobs.len());
+    println!("{} job(s) have been submitted from this directory.", jobs.len());  
+}
 
-    // List YAML files
-    
+fn remote<'a>(matches: &clap::ArgMatches<'a>) {
+    const CONFIG: &str = ".hwclirc";
+    let fname = dirs::home_dir().expect("Cannot determine the HOME directory.").join(CONFIG);
+    debug!("Config file: {}", fname.to_str().unwrap());
+    if !fname.exists() {
+        debug!("Creating a new config file");
+        let _touch = std::process::Command::new("touch")
+            .args(&[fname.to_str().unwrap()])
+            .spawn().expect("I/O Error");
+    }
+    let remote_name = matches.value_of("NAME").unwrap();
+    if let Ok(ref raw) = std::fs::read_to_string(fname) {
+        let mut config: models::Config = toml::from_str(raw).expect("Syntax error.");
+        if let Some(ref mut remotes) = config.remotes {
+            let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
+            match selected.len() {
+                1 => {
+                    if let Some(url) = matches.value_of("URL") {
+                        selected[0].url = url.to_owned();
+                        let out = toml::to_string(&config).unwrap();
+                        println!("{}", out);
+                        // TODO save file
+                    }
+                    else {
+                        println!("url = {}", selected[0].url);
+                    }
+                }
+                0 => {
+                    if let Some(url) = matches.value_of("URL") {
+                        remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
+                        let out = toml::to_string(&config).unwrap();
+                        println!("{}", out);
+                        // TODO save file
+                    }
+                    else {
+                        println!("A remoted named \"{}\" is undefined.", remote_name);
+                    }
+                }
+                _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
+            }
+        }
+        else {
+            if let Some(url) = matches.value_of("URL") {
+                config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
+                let out = toml::to_string(&config).unwrap();
+                println!("{}", out);
+                // TODO save file
+            }
+            else {
+                // There is no entry, so it must be undefined.
+                println!("A remoted named \"{}\" is undefined.", remote_name);
+            }
+            
+        }
+
+    }
 }
 
 macro_rules! subcommand {
@@ -144,4 +202,5 @@ fn main() {
     subcommand!(status, args);
     subcommand!(list, args);
     subcommand!(sub, args);
+    subcommand!(remote, args);
 }
