@@ -41,6 +41,9 @@ fn setup_logger(verbose: u64) -> Result<(), fern::InitError> {
 fn list<'a>(matches: &clap::ArgMatches<'a>) {
     let mut jobs: Vec<Job> = Job::list();
     jobs.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    if jobs.len() == 0 {
+        println!("No job is found associated to this directory.");
+    }
     for job in jobs.iter().take(10) {
         println!("{:?}", job.dir);
     }    
