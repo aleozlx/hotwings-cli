@@ -53,7 +53,11 @@ impl Job {
         debug!("Creating {:?}", job_dir);
         std::fs::create_dir(job_dir.clone())?;
         std::os::unix::fs::symlink(ref_dir.clone(), job_dir.join(SYM_REF_DIR))?;
-        std::os::unix::fs::symlink(Path::new(".ref").join(playbook.as_ref().strip_prefix(ref_dir).unwrap()), job_dir.join(SYM_PLAYBOOK))?;
+        std::os::unix::fs::symlink(Path::new(".ref").join(playbook.as_ref().strip_prefix(ref_dir.clone()).unwrap()), job_dir.join(SYM_PLAYBOOK))?;
+        let _tar = std::process::Command::new("sh")
+            .args(&["-c", &format!("tar czf {} *", job_dir.join("a.tgz").to_str().unwrap())])
+            .current_dir(ref_dir)
+            .spawn()?;
         Ok(Job {
             timestamp: job_dir.metadata().unwrap().ctime(),
             dir: job_dir
@@ -63,7 +67,7 @@ impl Job {
 
 impl std::fmt::Display for Job {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}/{}", self.dir.to_str().unwrap(), match self.playbook() {
+        write!(f, "{}+{}", self.dir.to_str().unwrap(), match self.playbook() {
             Ok(playbook) => playbook.to_str().unwrap().blue(),
             Err(_) => "?".red()
         })
