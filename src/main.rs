@@ -38,6 +38,14 @@ fn setup_logger(verbose: u64) -> Result<(), fern::InitError> {
     Ok(())
 }
 
+fn list<'a>(matches: &clap::ArgMatches<'a>) {
+    let mut jobs: Vec<Job> = Job::list();
+    jobs.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+    for job in jobs.iter().take(10) {
+        println!("{:?}", job.dir);
+    }    
+}
+
 fn status<'a>(matches: &clap::ArgMatches<'a>) {
     // Print current dir
     let cwd = std::fs::canonicalize(std::env::current_dir().expect("I/O Error: getting CWD")).unwrap();
@@ -83,6 +91,8 @@ fn main() {
             (about: "Establish or switch server connection")
         )
         (@subcommand sub => // storage: /tmp/hotwings-task_id & chmod
+            (@arg PREPARE: --prepare "Prepare a submission tarball but do not submit.")
+            (@arg PLAYBOOK: +required "YAML playbook")
             (about: "Check & submit a playbook to a Hotwings job system")
         )
         (@subcommand list => // storage: /tmp/hotwings-* owned by current user
@@ -97,4 +107,5 @@ fn main() {
     ).get_matches();
     setup_logger(args.occurrences_of("VERBOSE")).expect("Logger Error.");
     subcommand!(status, args);
+    subcommand!(list, args);
 }
