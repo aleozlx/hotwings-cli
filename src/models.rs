@@ -4,6 +4,8 @@ use colored::*;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 
+pub struct Remote {}
+
 pub const SYM_REF_DIR: &str = ".ref";
 pub const SYM_PLAYBOOK: &str = ".playbook";
 pub struct Job {
@@ -62,6 +64,10 @@ impl Job {
             timestamp: job_dir.metadata().unwrap().ctime(),
             dir: job_dir
         })
+    }
+
+    pub fn submit(&self, remote: Remote) {
+
     }
 }
 

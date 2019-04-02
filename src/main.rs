@@ -58,14 +58,17 @@ fn sub<'a>(matches: &clap::ArgMatches<'a>) {
         Ok(playbook) => {
             match Job::create(cwd, playbook) {
                 Ok(job) => {
-
+                    if matches.is_present("PREPARE") {
+                        println!("The job has been prepared but not submitted per user's request.");
+                        return;
+                    }
+                    // job.submit();
                 }
                 Err(e) => {
                     error!("I/O Error: creating a job");
                     error!("{}", e);
                 }
             }
-            // println!("Playbook: {}", playbook.to_str().unwrap().blue());
         }
         Err(e) => {
             error!("I/O Error: reading {}", playbook_name);
@@ -117,6 +120,8 @@ fn main() {
         )
         (@subcommand remote => // storage: $HOME
             (about: "Establish or switch server connection")
+            (@arg NAME: +required "Remote name")
+            (@arg URL: "If present, overwrite the remote URL, otherwise print.")
         )
         (@subcommand sub => // storage: /tmp/hotwings-task_id & chmod
             (@arg PREPARE: --prepare "Prepare a submission tarball but do not submit.")
