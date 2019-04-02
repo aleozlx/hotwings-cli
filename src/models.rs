@@ -9,6 +9,13 @@ pub struct Config {
     pub remotes: Option<Vec<Remote>>
 }
 
+impl Config {
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        std::fs::write(path, toml::to_string(&self).unwrap())?;
+        Ok(())
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Remote {
     pub name: String,

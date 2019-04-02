@@ -113,7 +113,7 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
             .spawn().expect("I/O Error");
     }
     let remote_name = matches.value_of("NAME").unwrap();
-    if let Ok(ref raw) = std::fs::read_to_string(fname) {
+    if let Ok(ref raw) = std::fs::read_to_string(&fname) {
         let mut config: models::Config = toml::from_str(raw).expect("Syntax error.");
         if let Some(ref mut remotes) = config.remotes {
             let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
@@ -121,9 +121,13 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
                 1 => {
                     if let Some(url) = matches.value_of("URL") {
                         selected[0].url = url.to_owned();
-                        let out = toml::to_string(&config).unwrap();
-                        println!("{}", out);
-                        // TODO save file
+                        if let Err(e) = config.save(&fname) {
+                            error!("Cannot save config file {}.", fname.to_str().unwrap());
+                            error!("{}", e);
+                        }
+                        else {
+                            println!("The URL is set successfully.");
+                        }
                     }
                     else {
                         println!("url = {}", selected[0].url);
@@ -133,8 +137,14 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
                     if let Some(url) = matches.value_of("URL") {
                         remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
                         let out = toml::to_string(&config).unwrap();
-                        println!("{}", out);
-                        // TODO save file
+                        // config_saver(&config);
+                        if let Err(e) = config.save(&fname) {
+                            error!("Cannot save config file {}.", fname.to_str().unwrap());
+                            error!("{}", e);
+                        }
+                        else {
+                            println!("The URL is set successfully.");
+                        }
                     }
                     else {
                         println!("A remoted named \"{}\" is undefined.", remote_name);
@@ -147,8 +157,13 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
             if let Some(url) = matches.value_of("URL") {
                 config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
                 let out = toml::to_string(&config).unwrap();
-                println!("{}", out);
-                // TODO save file
+                if let Err(e) = config.save(&fname) {
+                    error!("Cannot save config file {}.", fname.to_str().unwrap());
+                    error!("{}", e);
+                }
+                else {
+                    println!("The URL is set successfully.");
+                }
             }
             else {
                 // There is no entry, so it must be undefined.
