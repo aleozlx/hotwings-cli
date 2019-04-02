@@ -1,5 +1,7 @@
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
+use rand::{Rng, thread_rng};
+use rand::distributions::Alphanumeric;
 
 pub struct Job {
     pub timestamp: i64,
@@ -32,5 +34,25 @@ impl Job {
         let mut path = self.dir.path();
         path.push(".playbook");
         Ok(std::fs::canonicalize(path)?.as_path().strip_prefix(self.ref_dir()?).unwrap().to_path_buf())
+    }
+
+    fn rand_string(sz: usize) -> String {
+        let mut rng = thread_rng();
+        std::iter::repeat(())
+            .map(|()| rng.sample(Alphanumeric))
+            .take(sz)
+            .collect()
+    }
+
+    pub fn create<P: AsRef<Path>>(ref_dir: P, playbook: P) -> std::io::Result<Job> {
+        let tmp = std::path::Path::new("/tmp");
+        let job_dir = tmp.join(format!("hotwings-{}", Job::rand_string(6)));
+        debug!("Creating {:?}", job_dir);
+        std::fs::create_dir(job_dir)?;
+        let entry = std::fs::read_dir(job_dir)?;
+        Ok(Job {
+            timestamp: entry.metadata().unwrap().ctime(),
+            dir: entry
+        })
     }
 }

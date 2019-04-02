@@ -5,6 +5,7 @@ extern crate colored;
 extern crate log;
 extern crate dirs;
 extern crate fern;
+extern crate rand;
 
 mod cli;
 mod models;
@@ -47,6 +48,30 @@ fn list<'a>(matches: &clap::ArgMatches<'a>) {
     for job in jobs.iter().take(10) {
         println!("{:?}", job.dir);
     }    
+}
+
+fn sub<'a>(matches: &clap::ArgMatches<'a>) {
+    let cwd = std::fs::canonicalize(std::env::current_dir().expect("I/O Error: getting CWD")).unwrap();
+    println!("Ref directory: {}", cwd.to_str().unwrap().blue());
+    let playbook_name = matches.value_of("PLAYBOOK").unwrap();
+    match std::fs::canonicalize(playbook_name) {
+        Ok(playbook) => {
+            match Job::create(cwd, playbook) {
+                Ok(job) => {
+
+                }
+                Err(e) => {
+                    error!("I/O Error: creating a job");
+                    error!("{}", e);
+                }
+            }
+            // println!("Playbook: {}", playbook.to_str().unwrap().blue());
+        }
+        Err(e) => {
+            error!("I/O Error: reading {}", playbook_name);
+            error!("{}", e);
+        }
+    }
 }
 
 fn status<'a>(matches: &clap::ArgMatches<'a>) {
@@ -111,4 +136,5 @@ fn main() {
     setup_logger(args.occurrences_of("VERBOSE")).expect("Logger Error.");
     subcommand!(status, args);
     subcommand!(list, args);
+    subcommand!(sub, args);
 }
