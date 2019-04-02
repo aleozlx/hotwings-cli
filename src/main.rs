@@ -45,7 +45,8 @@ fn list<'a>(matches: &clap::ArgMatches<'a>) {
     if jobs.len() == 0 {
         println!("No job is found associated to this directory.");
     }
-    for job in jobs.iter().take(10) {
+    let top_n = value_t!(matches.value_of("TOPN"), usize).unwrap_or(10);
+    for job in jobs.iter().take(top_n) {
         println!("{}", job);
     }    
 }
@@ -130,6 +131,7 @@ fn main() {
         )
         (@subcommand list => // storage: /tmp/hotwings-* owned by current user
             (about: "List jobs submitted")
+            (@arg TOPN: "Only list the last N jobs.")
         )
         (@subcommand status =>
             (about: "Check status on any job submission based on the current directory")
