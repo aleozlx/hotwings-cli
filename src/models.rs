@@ -9,6 +9,7 @@ pub struct Config {
     pub remotes: Option<Vec<Remote>>
 }
 
+pub const CONFIG: &str = ".hwclirc";
 impl Config {
     pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
         std::fs::write(path, toml::to_string(&self).unwrap())?;
@@ -19,128 +20,80 @@ impl Config {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Remote {
     pub name: String,
-    pub url: String
+    pub url: String,
+    pub default: bool
 }
 
 impl Remote {
-    pub fn getter<'cfg>(config: &'cfg Config, name: &str) -> Option<&'cfg str> {
-        unimplemented!();
-        // if let Some(ref mut remotes) = config.remotes {
-        //     let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
-        //     match selected.len() {
-        //         1 => {
-        //             if let Some(url) = matches.value_of("URL") {
-        //                 selected[0].url = url.to_owned();
-        //                 if let Err(e) = config.save(&fname) {
-        //                     error!("Cannot save config file {}.", fname.to_str().unwrap());
-        //                     error!("{}", e);
-        //                 }
-        //                 else {
-        //                     println!("The URL is set successfully.");
-        //                 }
-        //             }
-        //             else {
-        //                 println!("url = {}", selected[0].url);
-        //             }
-        //         }
-        //         0 => {
-        //             if let Some(url) = matches.value_of("URL") {
-        //                 remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
-        //                 let out = toml::to_string(&config).unwrap();
-        //                 // config_saver(&config);
-        //                 if let Err(e) = config.save(&fname) {
-        //                     error!("Cannot save config file {}.", fname.to_str().unwrap());
-        //                     error!("{}", e);
-        //                 }
-        //                 else {
-        //                     println!("The URL is set successfully.");
-        //                 }
-        //             }
-        //             else {
-        //                 println!("A remoted named \"{}\" is undefined.", remote_name);
-        //             }
-        //         }
-        //         _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
-        //     }
-        // }
-        // else {
-        //     if let Some(url) = matches.value_of("URL") {
-        //         config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
-        //         let out = toml::to_string(&config).unwrap();
-        //         if let Err(e) = config.save(&fname) {
-        //             error!("Cannot save config file {}.", fname.to_str().unwrap());
-        //             error!("{}", e);
-        //         }
-        //         else {
-        //             println!("The URL is set successfully.");
-        //         }
-        //     }
-        //     else {
-        //         // There is no entry, so it must be undefined.
-        //         println!("A remoted named \"{}\" is undefined.", remote_name);
-        //     }   
-        // }
-    }
-
-    pub fn setter(config: &mut Config, name: &str, url: &str) {
-        unimplemented!();
-    //     if let Some(ref mut remotes) = config.remotes {
-    //         let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
-    //         match selected.len() {
-    //             1 => {
-    //                 if let Some(url) = matches.value_of("URL") {
-    //                     selected[0].url = url.to_owned();
-    //                     if let Err(e) = config.save(&fname) {
-    //                         error!("Cannot save config file {}.", fname.to_str().unwrap());
-    //                         error!("{}", e);
-    //                     }
-    //                     else {
-    //                         println!("The URL is set successfully.");
-    //                     }
-    //                 }
-    //                 else {
-    //                     println!("url = {}", selected[0].url);
-    //                 }
-    //             }
-    //             0 => {
-    //                 if let Some(url) = matches.value_of("URL") {
-    //                     remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
-    //                     let out = toml::to_string(&config).unwrap();
-    //                     // config_saver(&config);
-    //                     if let Err(e) = config.save(&fname) {
-    //                         error!("Cannot save config file {}.", fname.to_str().unwrap());
-    //                         error!("{}", e);
-    //                     }
-    //                     else {
-    //                         println!("The URL is set successfully.");
-    //                     }
-    //                 }
-    //                 else {
-    //                     println!("A remoted named \"{}\" is undefined.", remote_name);
-    //                 }
-    //             }
-    //             _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
-    //         }
-    //     }
-    //     else {
-    //         if let Some(url) = matches.value_of("URL") {
-    //             config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
-    //             let out = toml::to_string(&config).unwrap();
-    //             if let Err(e) = config.save(&fname) {
-    //                 error!("Cannot save config file {}.", fname.to_str().unwrap());
-    //                 error!("{}", e);
-    //             }
-    //             else {
-    //                 println!("The URL is set successfully.");
-    //             }
-    //         }
-    //         else {
-    //             // There is no entry, so it must be undefined.
-    //             println!("A remoted named \"{}\" is undefined.", remote_name);
-    //         }   
-    //     }
+    pub fn default() -> Option<Remote> {
+        let fname = dirs::home_dir().expect("Cannot determine the HOME directory.").join(CONFIG);
+        if !fname.exists() { return None; }
+        if let Ok(ref raw) = std::fs::read_to_string(&fname) {
+            let mut config: Config = toml::from_str(raw).expect("Syntax error.");
+            if let Some(ref mut remotes) = config.remotes {
+                let selected: Vec<&Remote> = remotes.iter().filter(|remote| remote.default == true).collect();
+                match selected.len() {
+                    1 => { Some(selected[0].clone()) }
+                    _ => { None }
+                }
+            }
+            else { None }
+        }
+        else { None }
     }
 }
+
+impl std::fmt::Display for Remote {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "{} = {}", &self.name, &self.url)
+    }
+}
+
+// pub enum RemoteRef<'a> {
+//     Undefined,
+//     Unique(Option<&'a Remote>),
+//     Duplicate
+// }
+
+// impl Remote {
+//     pub fn getter<'cfg>(config: &'cfg mut Config, name: &str) -> RemoteRef<'cfg> {
+//         if let Some(ref remotes) = config.remotes {
+//             let (selected, _): (Vec<&'cfg Remote>, Vec<&'cfg Remote>) = remotes.iter().partition(|remote| remote.name == name);
+//             match selected.len() {
+//                 1 => { RemoteRef::Unique(Some(selected[0])) }
+//                 0 => { RemoteRef::Undefined }
+//                 _ => { RemoteRef::Duplicate }
+//             }
+//         }
+//         else { RemoteRef::Undefined }
+//     }
+
+//     pub fn setter<'cfg>(config: &'cfg mut Config, name: &str, url: &str) -> std::io::Result<RemoteRef<'cfg>> {
+//         let fname = dirs::home_dir().expect("Cannot determine the HOME directory.").join(CONFIG);
+//         let ret = if let Some(ref mut remotes) = config.remotes {
+//             let (mut selected, _): (Vec<&'cfg mut Remote>, Vec<&'cfg mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == name);
+//             match selected.len() {
+//                 1 => {
+//                     selected[0].url = url.to_owned();
+//                     Ok(RemoteRef::Unique(None))
+//                 }
+//                 0 => {
+//                     remotes.push(Remote { name: name.to_owned(), url: url.to_owned() });
+//                     let out = toml::to_string(&config).unwrap();
+//                     Ok(RemoteRef::Undefined)
+//                 }
+//                 _ => { Ok(RemoteRef::Duplicate) }
+//             }
+//         }
+//         else {
+//             config.remotes = Some(vec![Remote { name: name.to_owned(), url: url.to_owned() }]);
+//             let out = toml::to_string(&config).unwrap();
+//             Ok(RemoteRef::Unique(None))
+//         };
+//         config.save(&fname)?;
+//         return ret;
+//     }
+// }
 
 pub const SYM_REF_DIR: &str = ".ref";
 pub const SYM_PLAYBOOK: &str = ".playbook";
@@ -192,18 +145,30 @@ impl Job {
         std::fs::create_dir(job_dir.clone())?;
         std::os::unix::fs::symlink(ref_dir.clone(), job_dir.join(SYM_REF_DIR))?;
         std::os::unix::fs::symlink(Path::new(".ref").join(playbook.as_ref().strip_prefix(ref_dir.clone()).unwrap()), job_dir.join(SYM_PLAYBOOK))?;
-        let _tar = std::process::Command::new("sh")
+        let mut p_tar = std::process::Command::new("sh")
             .args(&["-c", &format!("tar czf {} *", job_dir.join("a.tgz").to_str().unwrap())])
             .current_dir(ref_dir)
             .spawn()?;
+        p_tar.wait()?;
         Ok(Job {
             timestamp: job_dir.metadata().unwrap().ctime(),
             dir: job_dir
         })
     }
 
-    pub fn submit(&self, remote: Remote) {
-
+    pub fn submit(&self, remote: &Remote) -> std::io::Result<()> {
+        println!("Uploading {}/a.tgz", &self.dir.to_str().unwrap());
+        let mut p_curl = std::process::Command::new("curl")
+            .args(&[
+                &remote.url, "--progress-bar", "--verbose",
+                "-F", "job_archive=@a.tgz",
+                "-F", &format!("playbook_name={}", &self.playbook()?.to_str().unwrap()),
+                "-A", &format!("hwcli = {}", crate_version!())
+            ])
+            .current_dir(&self.dir)
+            .spawn()?;
+        p_curl.wait()?;
+        Ok(())
     }
 }
 

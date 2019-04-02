@@ -10,7 +10,6 @@ extern crate rand;
 extern crate serde_derive;
 extern crate toml;
 
-mod cli;
 mod models;
 
 use std::path::{Path, PathBuf};
@@ -66,7 +65,10 @@ fn sub<'a>(matches: &clap::ArgMatches<'a>) {
                         println!("The job has been prepared but not submitted per user's request.");
                         return;
                     }
-                    // job.submit();
+                    if let Some(ref remote) = Remote::default() {
+                        println!("Submitting to [{}]", remote);
+                        job.submit(remote);
+                    }
                 }
                 Err(e) => {
                     error!("I/O Error: creating a job");
@@ -135,7 +137,7 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
                     }
                     0 => {
                         if let Some(url) = matches.value_of("URL") {
-                            remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
+                            remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned(), default: true });
                             let out = toml::to_string(&config).unwrap();
                             // config_saver(&config);
                             if let Err(e) = config.save(&fname) {
@@ -155,7 +157,7 @@ fn remote<'a>(matches: &clap::ArgMatches<'a>) {
             }
             else {
                 if let Some(url) = matches.value_of("URL") {
-                    config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
+                    config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned(), default: true }]);
                     let out = toml::to_string(&config).unwrap();
                     if let Err(e) = config.save(&fname) {
                         error!("Cannot save config file {}.", fname.to_str().unwrap());
