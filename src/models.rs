@@ -22,6 +22,126 @@ pub struct Remote {
     pub url: String
 }
 
+impl Remote {
+    pub fn getter<'cfg>(config: &'cfg Config, name: &str) -> Option<&'cfg str> {
+        unimplemented!();
+        // if let Some(ref mut remotes) = config.remotes {
+        //     let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
+        //     match selected.len() {
+        //         1 => {
+        //             if let Some(url) = matches.value_of("URL") {
+        //                 selected[0].url = url.to_owned();
+        //                 if let Err(e) = config.save(&fname) {
+        //                     error!("Cannot save config file {}.", fname.to_str().unwrap());
+        //                     error!("{}", e);
+        //                 }
+        //                 else {
+        //                     println!("The URL is set successfully.");
+        //                 }
+        //             }
+        //             else {
+        //                 println!("url = {}", selected[0].url);
+        //             }
+        //         }
+        //         0 => {
+        //             if let Some(url) = matches.value_of("URL") {
+        //                 remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
+        //                 let out = toml::to_string(&config).unwrap();
+        //                 // config_saver(&config);
+        //                 if let Err(e) = config.save(&fname) {
+        //                     error!("Cannot save config file {}.", fname.to_str().unwrap());
+        //                     error!("{}", e);
+        //                 }
+        //                 else {
+        //                     println!("The URL is set successfully.");
+        //                 }
+        //             }
+        //             else {
+        //                 println!("A remoted named \"{}\" is undefined.", remote_name);
+        //             }
+        //         }
+        //         _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
+        //     }
+        // }
+        // else {
+        //     if let Some(url) = matches.value_of("URL") {
+        //         config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
+        //         let out = toml::to_string(&config).unwrap();
+        //         if let Err(e) = config.save(&fname) {
+        //             error!("Cannot save config file {}.", fname.to_str().unwrap());
+        //             error!("{}", e);
+        //         }
+        //         else {
+        //             println!("The URL is set successfully.");
+        //         }
+        //     }
+        //     else {
+        //         // There is no entry, so it must be undefined.
+        //         println!("A remoted named \"{}\" is undefined.", remote_name);
+        //     }   
+        // }
+    }
+
+    pub fn setter(config: &mut Config, name: &str, url: &str) {
+        unimplemented!();
+    //     if let Some(ref mut remotes) = config.remotes {
+    //         let (mut selected, _): (Vec<&mut Remote>, Vec<&mut Remote>) = remotes.iter_mut().partition(|remote| remote.name == remote_name);
+    //         match selected.len() {
+    //             1 => {
+    //                 if let Some(url) = matches.value_of("URL") {
+    //                     selected[0].url = url.to_owned();
+    //                     if let Err(e) = config.save(&fname) {
+    //                         error!("Cannot save config file {}.", fname.to_str().unwrap());
+    //                         error!("{}", e);
+    //                     }
+    //                     else {
+    //                         println!("The URL is set successfully.");
+    //                     }
+    //                 }
+    //                 else {
+    //                     println!("url = {}", selected[0].url);
+    //                 }
+    //             }
+    //             0 => {
+    //                 if let Some(url) = matches.value_of("URL") {
+    //                     remotes.push(Remote { name: remote_name.to_owned(), url: url.to_owned() });
+    //                     let out = toml::to_string(&config).unwrap();
+    //                     // config_saver(&config);
+    //                     if let Err(e) = config.save(&fname) {
+    //                         error!("Cannot save config file {}.", fname.to_str().unwrap());
+    //                         error!("{}", e);
+    //                     }
+    //                     else {
+    //                         println!("The URL is set successfully.");
+    //                     }
+    //                 }
+    //                 else {
+    //                     println!("A remoted named \"{}\" is undefined.", remote_name);
+    //                 }
+    //             }
+    //             _ => { println!("There are duplicate remotes named  \"{}\"", remote_name); }
+    //         }
+    //     }
+    //     else {
+    //         if let Some(url) = matches.value_of("URL") {
+    //             config.remotes = Some(vec![Remote { name: remote_name.to_owned(), url: url.to_owned() }]);
+    //             let out = toml::to_string(&config).unwrap();
+    //             if let Err(e) = config.save(&fname) {
+    //                 error!("Cannot save config file {}.", fname.to_str().unwrap());
+    //                 error!("{}", e);
+    //             }
+    //             else {
+    //                 println!("The URL is set successfully.");
+    //             }
+    //         }
+    //         else {
+    //             // There is no entry, so it must be undefined.
+    //             println!("A remoted named \"{}\" is undefined.", remote_name);
+    //         }   
+    //     }
+    }
+}
+
 pub const SYM_REF_DIR: &str = ".ref";
 pub const SYM_PLAYBOOK: &str = ".playbook";
 pub struct Job {
